@@ -29,6 +29,7 @@ The stable v0.2.12 web renderer follows redirects without exposing an enforceabl
 - Authenticated-evidence security gate: passed
 - `npm ci`: passed
 - Repository-local CLI version: exactly `0.39.1`
+- GitHub Actions: [run 39419346623](https://github.com/ometere123/standing/actions/runs/39419346623) passed both `offline` and `direct` jobs for commit `fccd2cfcac1149ab6e47d628c937a7ecac1df4ce`
 
 ## Source identity
 
