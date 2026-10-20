@@ -1,0 +1,50 @@
+name: Contract-only checks
+on:
+  push:
+  pull_request:
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install Python offline tests dependencies
+        run: python -m pip install 'pytest>=8,<10'
+      - name: Python syntax
+        run: python -m compileall -q contracts tests scripts
+      - name: Run offline security tests
+        run: python -m pytest tests/offline -q
+      - name: Enforce stable network lock
+        run: python scripts/static_preflight.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned local CLI
+        run: npm ci --no-audit --no-fund
+      - name: Verify pinned local CLI
+        run: |
+          test -x ./node_modules/.bin/genlayer
+          ./node_modules/.bin/genlayer --version | grep -F '0.39.1'
+  direct:
+    runs-on: ubuntu-latest
+    env:
+      GENVM_VERSION: v0.2.12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install tests dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Cache stable GenVM artifact
+        run: genvm-lint download --version v0.2.12
+      - name: Stable GenVM lint and schema checks
+        run: |
+          genvm-lint check contracts/standing.py --json
+          genvm-lint check contracts/protected_challenge.py --json
+          genvm-lint schema contracts/standing.py --json > /tmp/standing-schema.json
+          genvm-lint schema contracts/protected_challenge.py --json > /tmp/consumer-schema.json
+      - name: Direct Mode regression suite
+        run: python -m pytest -p no:gltest -p gltest_direct tests/direct -v

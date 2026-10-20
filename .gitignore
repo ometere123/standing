@@ -10,4 +10,5 @@ __pycache__/
 .pyright/
 .mypy_cache/
 coverage/
+artifacts/
 .DS_Store

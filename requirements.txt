@@ -1,0 +1,5 @@
+# Stable 61999 bundle is v0.2.12; matches existing audited StudioNet repos.
+# This pins the Direct Mode test harness instead of floating to preview RC.
+genlayer-test==0.29.0
+genvm-linter==0.11.0
+pytest>=8.2,<9

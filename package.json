@@ -1,0 +1,14 @@
+{
+  "name": "standing-genlayer-ic",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone consensus-backed Standing primitive for GenLayer StudioNet 61999",
+  "scripts": {
+    "cli:version": "genlayer --version",
+    "network": "genlayer network info",
+    "deploy:studionet": "bash scripts/deploy_studionet.sh"
+  },
+  "devDependencies": {
+    "genlayer": "0.39.1"
+  }
+}
