@@ -2,7 +2,7 @@
 
 ## Status
 
-**READY FOR SUBMISSION, with explicit runtime limitations documented below.**
+**BLOCKED only on one mandatory live-evidence item: the one-hour expiry boundary has not been waited out on StudioNet.** All source, security, stable-runtime, deployment, cross-contract and CI gates pass. The smallest next action is to activate a fresh 3,600-second matter, obtain a genuine public grant, wait until the recorded on-chain `expires_at`, then record the finalized `is_eligible=false` and consumer rollback receipts without changing the contract.
 
 ## Project title
 
