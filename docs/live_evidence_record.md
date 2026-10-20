@@ -14,6 +14,13 @@ inspectable in the official StudioNet explorer.
   reference, establishing a direct on-chain relationship to the procedural
   matter.
 
+For this reproducibility test, the exact claimant wallet
+`0x951e6B75530774fF82321a5ae54e14F778F0C855` is the sender of the exact public
+StudioNet transaction identified by the frozen matter reference
+`x49d04512a08e9eb196e1b382e28cfb79c9f53163ec40cd51b65bc9169ce1358f`,
+establishing the claimant's direct on-chain material interest in the procedural
+matter under the frozen criterion.
+
 The `x`-prefixed reference is the transaction hash without its leading `0`,
 chosen so the repository-local CLI cannot coerce the reference into an integer.
 It is an exact contiguous substring of the explorer hash and is intentionally
