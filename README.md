@@ -95,7 +95,7 @@ The exact v0.2.12 source audit is recorded in `docs/THREAT_MODEL.md`: the runtim
 
 Expected stable RPC: `https://studio.genlayer.com/api`, not `https://studio-dev.genlayer.com/api`.
 
-The final stable StudioNet deployment is recorded in `docs/DEPLOYMENT_EVIDENCE.md`: Standing is `0x5b27dB099296AAF72f7F36f458cbdD79B9f64d4f`, with finalized source-matched deployment transaction [0x3ea2…](https://explorer-studio.genlayer.com/tx/0x3ea2eab1c2f77421a75fad7ce16cc2ac96e29fe9e55096e672a6bb31dc439ce8), and ProtectedChallenge consumers are `0xb894c8769f38Ee4685Edc26710edB3D0c12F7bB0` and `0x28AbC74d187F8c8dA258e8d4f6267cFE4DFb60b2`. Both consumer deployments pin the actual Standing address and a frozen matter hash.
+The final stable StudioNet deployment is recorded in `docs/DEPLOYMENT_EVIDENCE.md`: Standing is `0x5b27dB099296AAF72f7F36f458cbdD79B9f64d4f`, with finalized source-matched deployment transaction [0x3ea2…](https://explorer-studio.genlayer.com/tx/0x3ea2eab1c2f77421a75fad7ce16cc2ac96e29fe9e55096e672a6bb31dc439ce8), and ProtectedChallenge consumers are `0xb894c8769f38Ee4685Edc26710edB3D0c12F7bB0`, `0x28AbC74d187F8c8dA258e8d4f6267cFE4DFb60b2` and `0xBea9ac6AB160418FA59d602A944df01d938EB05E`. All consumer deployments pin the actual Standing address and a frozen matter hash.
 
 See `docs/CODEX_HANDOFF.md` for the final exact agent instructions.
 
@@ -117,7 +117,7 @@ The caller must freeze `expected_matter_hash` and *never* substitute a mutable c
 
 ## Live proof
 
-The finalized live records include deterministic registered-party authorization, wrong-wallet and replay rollbacks, closed-matter rejection, an authenticated two-source public petition, and a typed public-claimant consumer challenge. The first public attempt also produced a genuine validator disagreement, while a later attempt correctly recorded an ambiguous quote; neither created standing. The successful public fixture is authenticated by immutable commitments from the two configured authority principals. The two hosts are distinct retrieval paths, not a claim of institutional independence. See the transaction-by-transaction record in `docs/DEPLOYMENT_EVIDENCE.md`.
+The finalized live records include deterministic registered-party authorization, wrong-wallet and replay rollbacks, closed-matter rejection, an authenticated two-source public petition, a typed public-claimant consumer challenge, and a real one-hour expiry followed by `is_eligible=false` and a post-expiry consumer rollback. The first public attempt also produced a genuine validator disagreement, while a later attempt correctly recorded an ambiguous quote; neither created standing. The successful public fixture is authenticated by immutable commitments from the two configured authority principals. The two hosts are distinct retrieval paths, not a claim of institutional independence. See the transaction-by-transaction record in `docs/DEPLOYMENT_EVIDENCE.md`.
 
 ## Non-goals
 

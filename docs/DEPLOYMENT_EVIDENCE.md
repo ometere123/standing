@@ -29,7 +29,7 @@ The stable v0.2.12 web renderer follows redirects without exposing an enforceabl
 - Authenticated-evidence security gate: passed
 - `npm ci`: passed
 - Repository-local CLI version: exactly `0.39.1`
-- GitHub Actions: [run 39419346623](https://github.com/ometere123/standing/actions/runs/39419346623) passed both `offline` and `direct` jobs for commit `fccd2cfcac1149ab6e47d628c937a7ecac1df4ce`
+- GitHub Actions: [run 39420160195](https://github.com/ometere123/standing/actions/runs/39420160195) passed both `offline` and `direct` jobs for commit `461cf034f8cdfc54b3a86eb19a00024ab66e78a1`
 
 ## Source identity
 
@@ -62,6 +62,13 @@ The final committed manifest is `SOURCE_SHA256_MANIFEST.json`.
 - Deployment transaction: [`0x423cb183b398e157c4ca083bd9ade23b22774fd78c3c40516a53bc9668039b48`](https://explorer-studio.genlayer.com/tx/0x423cb183b398e157c4ca083bd9ade23b22774fd78c3c40516a53bc9668039b48)
 - Final status: `FINALIZED`; execution result `SUCCESS`
 - Constructor binding: Standing `0x5b27dB099296AAF72f7F36f458cbdD79B9f64d4f`, matter `3`, hash `0d344ee8056eb97b4524172e6323a147d91cfcb6d9cfc806dd1a48c5f6d635de`
+
+### Live-expiry proof consumer
+
+- Address: [`0xBea9ac6AB160418FA59d602A944df01d938EB05E`](https://explorer-studio.genlayer.com/address/0xBea9ac6AB160418FA59d602A944df01d938EB05E)
+- Deployment transaction: [`0xb990f5caf4e01498e62b00dda95e4ff81072249002b1e97bc90c1e5629394235`](https://explorer-studio.genlayer.com/tx/0xb990f5caf4e01498e62b00dda95e4ff81072249002b1e97bc90c1e5629394235)
+- Final status: `FINALIZED`; execution result `SUCCESS`
+- Constructor binding: Standing `0x5b27dB099296AAF72f7F36f458cbdD79B9f64d4f`, matter `5`, hash `f3da592ae57bd5ebec34ce3821fb4b94a83e40728b4d4d42bf20500c5c754155`
 
 ## Live lifecycle records
 
@@ -102,6 +109,19 @@ The compact fixture was published in commit `76cef31dd824f712c54477ed9f8db1bbca5
 - Successful public claimant consumer challenge: [`0x721bdc08ad8fd788da6d7f6ae9f11247927808ab1d50cb68e17b3ee9fbc1d781`](https://explorer-studio.genlayer.com/tx/0x721bdc08ad8fd788da6d7f6ae9f11247927808ab1d50cb68e17b3ee9fbc1d781)
 - Canonical consumer readback: challenge key `d555…` stored opener walletA, matter 3 and the exact frozen hash.
 
+### Live expiry and post-expiry consumer rollback
+
+- Matter 5 creation: [`0x06f74234a3461632ad8962bac9e4d74befa644d5a17dc688d75eaa037b79c9ab`](https://explorer-studio.genlayer.com/tx/0x06f74234a3461632ad8962bac9e4d74befa644d5a17dc688d75eaa037b79c9ab)
+- Matter 5 activation: [`0x38a3c1ee340f7aa4ab6531b315a630a0ec210d77c12cb08bb85897efe2f79c74`](https://explorer-studio.genlayer.com/tx/0x38a3c1ee340f7aa4ab6531b315a630a0ec210d77c12cb08bb85897efe2f79c74)
+- Matter 5 reference: `x49d04512a08e9eb196e1b382e28cfb79c9f53163ec40cd51b65bc9169ce1358f`
+- Matter 5 frozen hash: `f3da592ae57bd5ebec34ce3821fb4b94a83e40728b4d4d42bf20500c5c754155`
+- Recorded `opened_at`: `1792498672`; recorded `expires_at`: `1792502272`
+- Authority A commitment: [`0x23a367a56db11050af486615136bc0b6573f7f29096fe078a229da44fb26f7e9`](https://explorer-studio.genlayer.com/tx/0x23a367a56db11050af486615136bc0b6573f7f29096fe078a229da44fb26f7e9)
+- Authority B commitment: [`0x3df7c16dbc082e2aab407852b677fd30a23da2e623b8e41801691bb340af2f58`](https://explorer-studio.genlayer.com/tx/0x3df7c16dbc082e2aab407852b677fd30a23da2e623b8e41801691bb340af2f58)
+- Successful authenticated petition: [`0xca043a768bbfcf45c7aed3ed343fff3dcf5ac7ee3bb8389128eae2f5873c59cd`](https://explorer-studio.genlayer.com/tx/0xca043a768bbfcf45c7aed3ed343fff3dcf5ac7ee3bb8389128eae2f5873c59cd); finalized `MAJORITY_AGREE`, petition result `P_GRANTED`, both source verdicts `SUPPORTED`, `valid_until=1792502272`.
+- Post-expiry canonical readback: after the latest StudioNet block timestamp reached `1792507227`, `get_matter(5)` and `get_petition(5)` still showed the frozen hash and grant receipt, while `is_eligible(5, f3da..., walletA)` returned `false` because the recorded expiry had passed.
+- Post-expiry consumer rollback: [`0x7c9a6a5ce9a68024648d09e615aeadb693063cd576ec430e899d1af57c55f2fd`](https://explorer-studio.genlayer.com/tx/0x7c9a6a5ce9a68024648d09e615aeadb693063cd576ec430e899d1af57c55f2fd) finalized `MAJORITY_AGREE` on `EXPECTED: claimant lacks current standing`; the fresh challenge key was not stored.
+
 ### Negative public evidence and consensus disagreement
 
 - First public attempt against matter 2: [`0x3180582db5b642e55ace96c9db7d0f65b7c9830d86054c8c644ef7eaf4e682cb`](https://explorer-studio.genlayer.com/tx/0x3180582db5b642e55ace96c9db7d0f65b7c9830d86054c8c644ef7eaf4e682cb) finalized `MAJORITY_DISAGREE`; no petition state was created.
@@ -110,7 +130,7 @@ The compact fixture was published in commit `76cef31dd824f712c54477ed9f8db1bbca5
 
 ## Remaining limitations
 
-- A live one-hour expiry boundary was not waited out in this session. Direct Mode covers expiry and the deployed read path uses actual chain timestamps, but this document does not claim a fabricated live expiry transaction.
+- The live one-hour expiry boundary is now proven: matter 5 expired at `1792502272`, the later StudioNet block timestamp was `1792507227`, `is_eligible` returned `false`, and the consumer rollback created no challenge record.
 - The authority principals and their key custody are configured trust assumptions; two addresses and two hostnames do not prove institutional independence.
 - A redirect to changed content can cause denial of service; it cannot create a positive grant without matching the immutable commitment.
 - Direct Mode web/LLM cases are mocks and must not be represented as live validator evidence.

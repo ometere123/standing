@@ -2,7 +2,7 @@
 
 ## Status
 
-**BLOCKED only on one mandatory live-evidence item: the one-hour expiry boundary has not been waited out on StudioNet.** All source, security, stable-runtime, deployment, cross-contract and CI gates pass. The smallest next action is to activate a fresh 3,600-second matter, obtain a genuine public grant, wait until the recorded on-chain `expires_at`, then record the finalized `is_eligible=false` and consumer rollback receipts without changing the contract.
+**READY FOR SUBMISSION.** Source, security, stable-runtime, deployment, live lifecycle and CI evidence are complete. The documented authority and redirect limitations remain explicit trust/availability assumptions, not unresolved deployment blockers.
 
 ## Project title
 
@@ -26,7 +26,8 @@ https://github.com/ometere123/standing
 - Standing deployment: [`0x3ea2eab1c2f77421a75fad7ce16cc2ac96e29fe9e55096e672a6bb31dc439ce8`](https://explorer-studio.genlayer.com/tx/0x3ea2eab1c2f77421a75fad7ce16cc2ac96e672a6bb31dc439ce8)
 - ProtectedChallenge (direct): [`0xb894c8769f38Ee4685Edc26710edB3D0c12F7bB0`](https://explorer-studio.genlayer.com/address/0xb894c8769f38Ee4685Edc26710edB3D0c12F7bB0)
 - ProtectedChallenge (public): [`0x28AbC74d187F8c8dA258e8d4f6267cFE4DFb60b2`](https://explorer-studio.genlayer.com/address/0x28AbC74d187F8c8dA258e8d4f6267cFE4DFb60b2)
-- Both deployments finalized with execution success and pin the actual Standing address.
+- ProtectedChallenge (expiry): [`0xBea9ac6AB160418FA59d602A944df01d938EB05E`](https://explorer-studio.genlayer.com/address/0xBea9ac6AB160418FA59d602A944df01d938EB05E)
+- All deployments finalized with execution success and pin the actual Standing address.
 
 ## Reusability
 
@@ -38,11 +39,11 @@ Builders can deploy Standing, seal their own charter, activate matters with froz
 - Stable Direct Mode: **16 passed** with `genlayer-test==0.29.0`, stable GenVM `v0.2.12`; web/LLM observations are mocks.
 - `genvm-linter==0.11.0`: both deployable contracts validated and schemas extracted successfully.
 - `eth_chainId` independently returned `0xf22f` (`61999`).
-- Live: registered-party challenge success; wrong-wallet, replay and closed-matter rollbacks; authenticated two-source public grant; typed public consumer success; missing-commitment denial; validator disagreement and ambiguous-quote fail-closed records.
+- Live: registered-party challenge success; wrong-wallet, replay and closed-matter rollbacks; authenticated two-source public grant; typed public consumer success; missing-commitment denial; validator disagreement and ambiguous-quote fail-closed records; a real one-hour expiry followed by `is_eligible=false` and a post-expiry consumer rollback with no challenge mutation.
 
 ## Security and limitations
 
-Stable v0.2.12 does not expose an enforceable final redirect-host check, and its HTTP path also follows redirects. Standing therefore authenticates exact rendered bytes with immutable sender-authenticated authority commitments before semantic assessment. This blocks changed redirected content from manufacturing a grant, but redirects remain an availability risk. Authority identity, key custody, institutional independence and real-world truth remain configured trust assumptions. A live one-hour expiry wait was not claimed; Direct Mode covers expiry and all deployed eligibility checks use actual chain timestamps.
+Stable v0.2.12 does not expose an enforceable final redirect-host check, and its HTTP path also follows redirects. Standing therefore authenticates exact rendered bytes with immutable sender-authenticated authority commitments before semantic assessment. This blocks changed redirected content from manufacturing a grant, but redirects remain an availability risk. Authority identity, key custody, institutional independence and real-world truth remain configured trust assumptions. The live one-hour expiry boundary is proven in `docs/DEPLOYMENT_EVIDENCE.md`; Direct Mode additionally covers the broader expiry matrix.
 
 ## Source hashes
 

@@ -76,4 +76,4 @@ A source can lie, spoof a wallet in text, be compromised, redirect, disappear or
 - Stable Direct Mode: 16 passed with `genlayer-test==0.29.0` and the v0.2.12 artifact selector. Web/LLM responses are mocks and are not live consensus evidence.
 - Stable GenVM checks: `genvm-linter==0.11.0`, `GENVM_VERSION=v0.2.12`, both contracts pass lint/validation and schema extraction.
 - Network guard: repository-local CLI `0.39.1`; `eth_chainId` at `https://studio.genlayer.com/api` returned `0xf22f`, independently parsed as `61999`.
-- Deployment: Standing and both consumer instances are finalized on stable StudioNet and their deployed sources are matched to the recorded hashes. The one-hour expiry boundary remains covered by Direct Mode rather than a claimed live wait.
+- Deployment: Standing and all three consumer instances are finalized on stable StudioNet and their deployed sources are matched to the recorded hashes. Matter 5 provides a live one-hour expiry proof: after `expires_at`, canonical eligibility returned false and the post-expiry consumer rollback created no challenge record.
