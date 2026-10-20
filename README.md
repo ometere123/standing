@@ -40,7 +40,7 @@ Matter owners set procedural scope up front; they **do not** get a blank check t
 - Two different hostnames do not cryptographically guarantee two independent authors. To reduce accidental same-operator sources, sibling domains with a matching final two labels are rejected; sophisticated shared-control relationships remain an external trust limitation.
 - Public evidence must explicitly connect a hexadecimal wallet to the matter: a human name alone cannot prove wallet ownership. Petition submission establishes control of `msg.sender`, but the public record must independently make the link.
 - A matter controller may close the matter, which immediately disables future eligibility. This deliberate power is documented; use independent contract governance as the controller if a stronger liveness guarantee is needed.
-- The URL checker prevents direct unsafe hostnames, encoded URLs and non-HTTPS links. **The current value-bearing deployment is blocked** because stable `gl.nondet.web.render` does not expose an effective destination or no-redirect control. The hosted webdriver follows navigation from the requested URL, so an initial approved hostname is not enough to prove redirected content stayed on that host. Do not use public positive standing for value-bearing actions until an exact-runtime effective-host policy is verified; see `docs/THREAT_MODEL.md`.
+- The URL checker prevents direct unsafe hostnames, encoded URLs and non-HTTPS links. **The current value-bearing deployment is blocked** because stable `gl.nondet.web.render` does not expose an effective destination or no-redirect control. The exact v0.2.12 webdriver follows navigation from the requested URL, so an initial approved hostname is not enough to prove redirected content stayed on that host. Do not use public positive standing for value-bearing actions until an exact-runtime effective-host policy is verified; see `docs/THREAT_MODEL.md`.
 - The `gl.nondet.web.render` mechanism is deliberately non-deterministic; disagreement (including changing web content) is a consensus failure, not something a client should paper over by accepting the leader alone.
 
 ## Files
@@ -88,7 +88,7 @@ The deploy script validates local version, network selection, and an RPC chain-I
 bash scripts/deploy_studionet.sh
 ```
 
-Current result is an intentional `BLOCKED` exit until the redirect policy is verified on the exact stable hosted runtime. No deployment address or transaction is claimed in this revision.
+Current result is an intentional `BLOCKED` exit until the redirect policy is verified on the exact stable hosted runtime. The exact v0.2.12 source audit is recorded in `docs/THREAT_MODEL.md`; no deployment address or transaction is claimed in this revision.
 
 Expected stable RPC: `https://studio.genlayer.com/api`, not `https://studio-dev.genlayer.com/api`.
 

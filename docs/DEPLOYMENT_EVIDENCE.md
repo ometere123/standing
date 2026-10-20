@@ -2,7 +2,7 @@
 
 ## Status
 
-**BLOCKED — no value-bearing deployment was performed.** The source passed stable local verification, but the exact hosted GenVM/web runtime does not expose an effective redirect destination or a no-redirect restriction for `gl.nondet.web.render`. The initial hostname allowlist therefore cannot prove that fetched evidence remained on the approved authority. The deployment script exits with code 14 until this policy is verified or the evidence path is changed.
+**BLOCKED — no value-bearing deployment was performed.** The source passed stable local verification, but the exact stable v0.2.12 GenVM/web runtime does not expose an effective redirect destination or a no-redirect restriction for `gl.nondet.web.render`. Its webdriver follows `page.goto` navigation and its request client uses default redirect behavior ([web module](https://github.com/genlayerlabs/genvm/blob/v0.2.12/modules/install/config/genvm-web-default.lua#L7-L47), [webdriver](https://github.com/genlayerlabs/genvm/blob/v0.2.12/modules/webdriver/src/prj/src/index.ts#L65-L83), [HTTP client](https://github.com/genlayerlabs/genvm/blob/v0.2.12/modules/implementation/src/common/mod.rs#L382-L386)). The initial hostname allowlist therefore cannot prove that fetched evidence remained on the approved authority. The deployment script exits with code 14 until this policy is verified or the evidence path is changed.
 
 Observed during workspace execution on `2026-10-20`:
 
