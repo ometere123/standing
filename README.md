@@ -21,11 +21,11 @@ Standing establishes *procedural eligibility*, not truth, guilt, compensation, o
 ## The protocol invariant
 
 1. A charter owner defines a bounded public-interest test, permitted petition mode and lifetime. Once sealed, the charter's hash and policy never change.
-2. A matter controller creates a **draft** referencing that charter, chooses two distinct public authority hostnames, and registers the exactly known direct parties/dependent consumers. An actor cannot be added after activation.
+2. A matter controller creates a **draft** referencing that charter, chooses two distinct public authority hostnames and two distinct, nonzero authority principals, and registers the exactly known direct parties/dependent consumers. An actor cannot be added after activation.
 3. Activation freezes all relevant terms and registered actors in a canonical `matter_hash`.
 4. Registered actors get standing *deterministically*; they do not require AI. Other wallets may petition on their **own sender address** only, and only if public petitions are enabled.
-5. A public petition MUST supply exactly two HTTPS public records from the two frozen distinct authority hosts. Each record must independently name the exact wallet and exact matter reference, and explicitly substantiate the frozen material-interest test.
-6. The leader fetches and assesses **both** records; validators independently fetch and assess **both** as well. A supporting quote must be literally present in the independently retrieved page and contain both anchors. Disagreement means no safe finalization.
+5. Before a public petition can be assessed, authority A and authority B each submit one immutable Keccak-256 commitment for the exact `(matter_id, frozen matter hash, claimant wallet, source)` tuple. The claimant supplies HTTPS URLs on the two frozen hosts, but URLs are distribution hints rather than authenticity proofs.
+6. The leader fetches and hash-authenticates **both** committed records, then assesses the material-interest criterion. Validators independently fetch, hash-check and assess **both** records. A supporting quote must be literally present in the independently retrieved, committed bytes and contain both anchors. Disagreement means no safe finalization.
 7. A public grant is short lived (max 72h) and cannot outlive the matter. Denied/ambiguous/unavailable evidence never creates standing.
 8. The consumer verifies `(matter_id, expected_matter_hash, caller)` through the typed Standing interface before recording a one-use challenge key.
 
@@ -37,10 +37,11 @@ Matter owners set procedural scope up front; they **do not** get a blank check t
 
 - This primitive establishes only **standing under a configured charter**, **not legal standing in any court**.
 - The matter controller selects the two source domains. Their institutional authority is a **controller-provided policy assumption**. The contract does not prove source authority or guaranteed independence.
+- The matter controller selects two authority principals. Their authority to attest to a claimant's evidence is a **controller-provided trust assumption**. Each principal is authenticated by the transaction sender, and the commitment is immutable for the matter lifetime; two principals do not cryptographically prove institutional independence.
 - Two different hostnames do not cryptographically guarantee two independent authors. To reduce accidental same-operator sources, sibling domains with a matching final two labels are rejected; sophisticated shared-control relationships remain an external trust limitation.
 - Public evidence must explicitly connect a hexadecimal wallet to the matter: a human name alone cannot prove wallet ownership. Petition submission establishes control of `msg.sender`, but the public record must independently make the link.
 - A matter controller may close the matter, which immediately disables future eligibility. This deliberate power is documented; use independent contract governance as the controller if a stronger liveness guarantee is needed.
-- The URL checker prevents direct unsafe hostnames, encoded URLs and non-HTTPS links. **The current value-bearing deployment is blocked** because stable `gl.nondet.web.render` does not expose an effective destination or no-redirect control. The exact v0.2.12 webdriver follows navigation from the requested URL, so an initial approved hostname is not enough to prove redirected content stayed on that host. Do not use public positive standing for value-bearing actions until an exact-runtime effective-host policy is verified; see `docs/THREAT_MODEL.md`.
+- The URL checker prevents direct unsafe hostnames, encoded URLs and non-HTTPS links. Stable v0.2.12 does follow redirects without exposing the effective host, so host checks alone are not treated as authentication. The immutable content commitment is the security boundary: changed or attacker-substituted bytes fail the Keccak check before the model runs. Redirects can still cause unavailability, and the configured hosts remain an availability/distribution policy assumption.
 - The `gl.nondet.web.render` mechanism is deliberately non-deterministic; disagreement (including changing web content) is a consensus failure, not something a client should paper over by accepting the leader alone.
 
 ## Files
@@ -54,6 +55,7 @@ Matter owners set procedural scope up front; they **do not** get a blank check t
 - `docs/DEPLOYMENT_EVIDENCE.md` — immutable evidence template; does not fabricate receipts.
 - `SUBMISSION.md` — honest submission draft and current blocker status.
 - `scripts/` — preflight and deployment scripts hardlocked to stable StudioNet.
+- `scripts/verify_authenticated_evidence.py` — derived fail-closed proof gate for the authority-commitment and redirect-substitution regressions.
 
 ## Run tests
 
@@ -82,13 +84,13 @@ The root `package.json` and committed lockfile pin `genlayer@0.39.1` exactly. Do
 
 ## Deploy on StudioNet only
 
-The deploy script validates local version, network selection, and an RPC chain-ID proof. It **fails closed if it cannot prove 61999** and currently stops before deployment because the hosted redirect/effective-host policy remains unresolved. It does not modify wallet keys or search for credentials.
+The deploy script validates local version, network selection, an RPC chain-ID proof, and the executed authenticated-evidence security gate. It **fails closed if it cannot prove 61999 or the hash-authentication regressions do not pass**. It does not modify wallet keys or search for credentials.
 
 ```bash
 bash scripts/deploy_studionet.sh
 ```
 
-Current result is an intentional `BLOCKED` exit until the redirect policy is verified on the exact stable hosted runtime. The exact v0.2.12 source audit is recorded in `docs/THREAT_MODEL.md`; no deployment address or transaction is claimed in this revision.
+The exact v0.2.12 source audit is recorded in `docs/THREAT_MODEL.md`: the runtime does not expose an effective host, so the contract authenticates the exact content instead. No redirect-based positive grant is accepted unless it serves the authority-precommitted bytes.
 
 Expected stable RPC: `https://studio.genlayer.com/api`, not `https://studio-dev.genlayer.com/api`.
 

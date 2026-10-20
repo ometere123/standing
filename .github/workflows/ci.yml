@@ -48,3 +48,7 @@ jobs:
           genvm-lint schema contracts/protected_challenge.py --json > /tmp/consumer-schema.json
       - name: Direct Mode regression suite
         run: python -m pytest -p no:gltest -p gltest_direct tests/direct -v
+      - name: Authenticated evidence security gate
+        env:
+          GENVM_VERSION: v0.2.12
+        run: python scripts/verify_authenticated_evidence.py

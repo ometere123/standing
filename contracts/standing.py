@@ -3,8 +3,11 @@
 
 The claim holder must submit from the wallet it wants authorised. Public evidence
 must bind that exact wallet and the frozen matter reference in independently
-retrieved content from TWO distinct matter-controller-selected authorities.
-Neither the model nor the controller can mint arbitrary public standing.
+retrieved content from TWO distinct matter-controller-selected authorities. Each
+authority must first commit the exact rendered evidence hash for that wallet and
+matter; leader and validator observations authenticate those bytes before semantic
+assessment. Neither the model, claimant, redirect target nor controller can mint
+arbitrary public standing after activation.
 """
 from genlayer import *
 import json
@@ -56,6 +59,8 @@ class Matter:
     context: str
     domain_a: str
     domain_b: str
+    authority_a: Address
+    authority_b: Address
     grant_count: u8
     status: u8
     expires_at: u256
@@ -73,6 +78,18 @@ class Grant:
 
 @allow_storage
 @dataclass
+class EvidenceCommitment:
+    matter_id: u256
+    claimant: Address
+    matter_hash: str
+    source_index: u8
+    authority: Address
+    evidence_hash: str
+    committed_at: u256
+
+
+@allow_storage
+@dataclass
 class Petition:
     matter_id: u256
     claimant: Address
@@ -80,6 +97,8 @@ class Petition:
     result: u8
     first_url: str
     second_url: str
+    first_evidence_hash: str
+    second_evidence_hash: str
     first_quote: str
     second_quote: str
     first_verdict: u8
@@ -254,9 +273,10 @@ def prompt_for(text: str, reference: str, wallet: str, scope: str, context: str)
     )
 
 
-def observe_once(url: str, reference: str, wallet: str, scope: str, context: str, with_source: bool = False) -> dict:
+def observe_once(url: str, reference: str, wallet: str, scope: str, context: str,
+                 expected_evidence_hash: str, with_source: bool = False) -> dict:
     try:
-        source = str(gl.nondet.web.render(url, mode="text"))[:MAX_PAGE]
+        source = str(gl.nondet.web.render(url, mode="text"))
     except Exception:
         result = {"verdict": SOURCE_UNAVAILABLE, "quote": "", "reason": "public source unavailable"}
         if with_source:
@@ -264,6 +284,19 @@ def observe_once(url: str, reference: str, wallet: str, scope: str, context: str
         return result
     if not source.strip():
         result = {"verdict": SOURCE_UNAVAILABLE, "quote": "", "reason": "public source empty"}
+        if with_source:
+            result["source"] = source
+        return result
+    # Stable GenVM v0.2.12 follows redirects but does not expose the final host.
+    # Authenticate the exact rendered bytes before asking an LLM to interpret them.
+    # A redirect to changed content therefore cannot manufacture a positive result.
+    if len(source) > MAX_PAGE:
+        result = {"verdict": SOURCE_NOT_SUPPORTED, "quote": "", "reason": "public source exceeds bounded evidence size"}
+        if with_source:
+            result["source"] = ""
+        return result
+    if not is_hash(expected_evidence_hash) or keccak(source) != expected_evidence_hash:
+        result = {"verdict": SOURCE_NOT_SUPPORTED, "quote": "", "reason": "evidence does not match immutable authority commitment"}
         if with_source:
             result["source"] = source
         return result
@@ -299,10 +332,11 @@ def observe_once(url: str, reference: str, wallet: str, scope: str, context: str
     return result
 
 
-def verify_pair(url_a: str, url_b: str, reference: str, wallet: str, scope: str, context: str) -> dict:
+def verify_pair(url_a: str, url_b: str, reference: str, wallet: str, scope: str, context: str,
+                expected_hash_a: str, expected_hash_b: str) -> dict:
     def leader_fn():
-        return {"a": observe_once(url_a, reference, wallet, scope, context),
-                "b": observe_once(url_b, reference, wallet, scope, context)}
+        return {"a": observe_once(url_a, reference, wallet, scope, context, expected_hash_a),
+                "b": observe_once(url_b, reference, wallet, scope, context, expected_hash_b)}
 
     def validator_fn(proposal) -> bool:
         if not isinstance(proposal, gl.vm.Return):
@@ -310,15 +344,18 @@ def verify_pair(url_a: str, url_b: str, reference: str, wallet: str, scope: str,
         suggested = proposal.calldata
         if not pair_shape(suggested):
             return False
-        current_a = observe_once(url_a, reference, wallet, scope, context, True)
-        current_b = observe_once(url_b, reference, wallet, scope, context, True)
-        for label, observed in (("a", current_a), ("b", current_b)):
+        current_a = observe_once(url_a, reference, wallet, scope, context, expected_hash_a, True)
+        current_b = observe_once(url_b, reference, wallet, scope, context, expected_hash_b, True)
+        for label, observed, expected_hash in (("a", current_a, expected_hash_a),
+                                               ("b", current_b, expected_hash_b)):
             claimed = suggested[label]
             if int(claimed["verdict"]) != int(observed["verdict"]):
                 return False
+            fresh = str(observed.get("source", ""))
+            if fresh and (len(fresh) > MAX_PAGE or keccak(fresh) != expected_hash):
+                return False
             if int(claimed["verdict"]) == SOURCE_SUPPORTED:
                 quote = str(claimed["quote"])
-                fresh = str(observed.get("source", ""))
                 if quote != str(observed["quote"]):
                     return False
                 if not quote or quote not in fresh or wallet.lower() not in quote.lower() or reference not in quote:
@@ -336,6 +373,7 @@ class Standing(gl.Contract):
     matters: TreeMap[u256, Matter]
     grants: TreeMap[u256, Grant]
     matter_grant_slots: TreeMap[u256, u256]
+    evidence_commitments: TreeMap[str, EvidenceCommitment]
     latest_petition: TreeMap[str, u256]
     attempt_count: TreeMap[str, u256]
     petitions: TreeMap[u256, Petition]
@@ -372,6 +410,9 @@ class Standing(gl.Contract):
     def _claim_key(self, matter_id: u256, wallet: Address) -> str:
         return keccak(f"standing:petition:{int(matter_id)}:{str(wallet).lower()}")
 
+    def _evidence_key(self, matter_id: u256, wallet: Address, source_index: u8) -> str:
+        return keccak(f"standing:evidence:v1:{int(matter_id)}:{str(wallet).lower()}:{int(source_index)}")
+
     @gl.public.write
     def create_charter(self, title: str, interest_test: str, max_lifetime_seconds: u256, public_petitions: bool) -> u256:
         title = bounded(title, MAX_TITLE, "title")
@@ -397,7 +438,8 @@ class Standing(gl.Contract):
         return charter.definition_hash
 
     @gl.public.write
-    def create_matter(self, charter_id: u256, reference: str, title: str, context: str, domain_a: str, domain_b: str) -> u256:
+    def create_matter(self, charter_id: u256, reference: str, title: str, context: str,
+                      domain_a: str, domain_b: str, authority_a: Address, authority_b: Address) -> u256:
         charter = self._charter(charter_id)
         if int(charter.status) != SEALED:
             error("charter must be sealed")
@@ -409,10 +451,14 @@ class Standing(gl.Contract):
         domain_a, domain_b = public_host(domain_a), public_host(domain_b)
         if domain_a == domain_b or domain_a.endswith("." + domain_b) or domain_b.endswith("." + domain_a) or domain_a.split(".")[-2:] == domain_b.split(".")[-2:]:
             error("two unrelated DNS authority hosts required")
+        if (is_zero_address(authority_a) or is_zero_address(authority_b) or
+                authority_a == authority_b or authority_a == gl.message.sender_address or
+                authority_b == gl.message.sender_address):
+            error("two distinct non-controller authority principals required")
         matter_id = self.next_matter_id
         self.next_matter_id = int(matter_id) + 1
         self.matters[matter_id] = Matter(gl.message.sender_address, charter_id, charter.definition_hash,
-                                          reference, title, context, domain_a, domain_b,
+                                          reference, title, context, domain_a, domain_b, authority_a, authority_b,
                                           0, MATTER_DRAFT, 0, 0, "")
         return matter_id
 
@@ -457,6 +503,7 @@ class Standing(gl.Contract):
             "charter_hash": str(matter.charter_hash), "reference": str(matter.reference),
             "title": str(matter.title), "context": str(matter.context),
             "domain_a": str(matter.domain_a), "domain_b": str(matter.domain_b),
+            "authority_a": str(matter.authority_a).lower(), "authority_b": str(matter.authority_b).lower(),
             "lifetime": int(lifetime_seconds), "opened_at": int(matter.opened_at),
             "expires_at": int(matter.expires_at), "actors": actors}))
         matter.status = MATTER_ACTIVE
@@ -469,6 +516,52 @@ class Standing(gl.Contract):
         if matter.controller != gl.message.sender_address or int(matter.status) != MATTER_ACTIVE:
             error("only controller may close an active matter")
         matter.status = MATTER_CLOSED
+
+    @gl.public.write
+    def commit_evidence_hash(self, matter_id: u256, claimant: Address, source_index: u8,
+                             evidence_hash: str) -> None:
+        """Bind one exact rendered evidence document to one trusted authority principal.
+
+        The caller is authenticated by the transaction sender, while the content is
+        authenticated by Keccak256 in the later leader and validator observations.
+        Commitments are immutable and cannot be written after the matter expires or
+        closes. A fresh matter is required to revoke or replace a commitment.
+        """
+        matter = self._matter(matter_id)
+        now = now_seconds()
+        if int(matter.status) != MATTER_ACTIVE or now >= int(matter.expires_at):
+            error("matter not active within commitment window")
+        if is_zero_address(claimant):
+            error("zero claimant address")
+        if int(source_index) not in (1, 2):
+            error("source index must be one or two")
+        authority = matter.authority_a if int(source_index) == 1 else matter.authority_b
+        if authority != gl.message.sender_address:
+            error("only exact configured authority may commit evidence")
+        if not is_hash(evidence_hash):
+            error("evidence commitment must be canonical hash")
+        key = self._evidence_key(matter_id, claimant, source_index)
+        if key in self.evidence_commitments:
+            error("evidence commitment is immutable")
+        self.evidence_commitments[key] = EvidenceCommitment(
+            matter_id, claimant, matter.matter_hash, source_index, authority, evidence_hash, now)
+
+    @gl.public.view
+    def get_evidence_commitment(self, matter_id: u256, claimant: Address, source_index: u8) -> dict:
+        matter = self._matter(matter_id)
+        if int(source_index) not in (1, 2):
+            error("source index must be one or two")
+        key = self._evidence_key(matter_id, claimant, source_index)
+        if key not in self.evidence_commitments:
+            return {"committed": False, "matter_id": int(matter_id), "claimant": str(claimant),
+                    "matter_hash": str(matter.matter_hash), "source_index": int(source_index),
+                    "authority": str(matter.authority_a if int(source_index) == 1 else matter.authority_b),
+                    "evidence_hash": "", "committed_at": 0}
+        c = self.evidence_commitments[key]
+        return {"committed": True, "matter_id": int(c.matter_id), "claimant": str(c.claimant),
+                "matter_hash": str(c.matter_hash), "source_index": int(c.source_index),
+                "authority": str(c.authority), "evidence_hash": str(c.evidence_hash),
+                "committed_at": int(c.committed_at)}
 
     @gl.public.write
     def file_petition(self, matter_id: u256, evidence_a: str, evidence_b: str) -> u256:
@@ -488,9 +581,31 @@ class Standing(gl.Contract):
         previous = int(self.attempt_count[key]) if key in self.attempt_count else 0
         if previous >= MAX_ATTEMPTS:
             error("attempt limit reached")
-        # An unsuccessful retry replaces an earlier success; claimant cannot mix stale proofs.
-        pair = verify_pair(evidence_a, evidence_b, str(matter.reference), str(claimant),
-                           str(charter.interest_test), str(matter.context))
+        commitment_key_a = self._evidence_key(matter_id, claimant, 1)
+        commitment_key_b = self._evidence_key(matter_id, claimant, 2)
+        commitment_a = self.evidence_commitments[commitment_key_a] if commitment_key_a in self.evidence_commitments else None
+        commitment_b = self.evidence_commitments[commitment_key_b] if commitment_key_b in self.evidence_commitments else None
+        valid_a = commitment_a is not None and commitment_a.claimant == claimant and int(commitment_a.matter_id) == int(matter_id) and \
+            str(commitment_a.matter_hash) == str(matter.matter_hash) and int(commitment_a.source_index) == 1 and \
+            commitment_a.authority == matter.authority_a and is_hash(commitment_a.evidence_hash)
+        valid_b = commitment_b is not None and commitment_b.claimant == claimant and int(commitment_b.matter_id) == int(matter_id) and \
+            str(commitment_b.matter_hash) == str(matter.matter_hash) and int(commitment_b.source_index) == 2 and \
+            commitment_b.authority == matter.authority_b and is_hash(commitment_b.evidence_hash)
+        expected_hash_a = str(commitment_a.evidence_hash) if valid_a else ""
+        expected_hash_b = str(commitment_b.evidence_hash) if valid_b else ""
+        # A redirectable URL is not an authorization primitive.  No consensus call
+        # is attempted until both trusted authority principals have immutably bound
+        # the exact claimant/matter/source tuple to content hashes.
+        if not valid_a or not valid_b:
+            pair = {"a": {"verdict": SOURCE_NOT_SUPPORTED, "quote": "",
+                           "reason": "authenticated source commitment missing or invalid"},
+                    "b": {"verdict": SOURCE_NOT_SUPPORTED, "quote": "",
+                           "reason": "authenticated source commitment missing or invalid"}}
+        else:
+            # An unsuccessful retry replaces an earlier success; claimant cannot mix stale proofs.
+            pair = verify_pair(evidence_a, evidence_b, str(matter.reference), str(claimant),
+                               str(charter.interest_test), str(matter.context),
+                               expected_hash_a, expected_hash_b)
         a, b = pair["a"], pair["b"]
         if int(a["verdict"]) == SOURCE_SUPPORTED and int(b["verdict"]) == SOURCE_SUPPORTED:
             status = P_GRANTED
@@ -504,7 +619,8 @@ class Standing(gl.Contract):
         self.next_petition_id = int(petition_id) + 1
         valid_until = min(now + MAX_TTL, int(matter.expires_at)) if status == P_GRANTED else 0
         self.petitions[petition_id] = Petition(matter_id, claimant, matter.matter_hash, status,
-                evidence_a, evidence_b, str(a["quote"]), str(b["quote"]),
+                evidence_a, evidence_b, expected_hash_a, expected_hash_b,
+                str(a["quote"]), str(b["quote"]),
                 int(a["verdict"]), int(b["verdict"]),
                 (str(a["reason"]) + " | " + str(b["reason"]))[:2*MAX_REASON+3], now, valid_until)
         self.latest_petition[key] = petition_id
@@ -547,7 +663,8 @@ class Standing(gl.Contract):
         return {"controller": str(m.controller), "charter_id": int(m.charter_id),
                 "charter_hash": str(m.charter_hash), "reference": str(m.reference),
                 "title": str(m.title), "context": str(m.context), "domain_a": str(m.domain_a),
-                "domain_b": str(m.domain_b), "grant_count": int(m.grant_count),
+                "domain_b": str(m.domain_b), "authority_a": str(m.authority_a),
+                "authority_b": str(m.authority_b), "grant_count": int(m.grant_count),
                 "status": int(m.status), "opened_at": int(m.opened_at), "expires_at": int(m.expires_at),
                 "matter_hash": str(m.matter_hash)}
 
@@ -569,6 +686,8 @@ class Standing(gl.Contract):
         return {"matter_id": int(p.matter_id), "claimant": str(p.claimant),
                 "matter_hash": str(p.matter_hash), "result": int(p.result),
                 "first_url": str(p.first_url), "second_url": str(p.second_url),
+                "first_evidence_hash": str(p.first_evidence_hash),
+                "second_evidence_hash": str(p.second_evidence_hash),
                 "first_quote": str(p.first_quote), "second_quote": str(p.second_quote),
                 "first_verdict": int(p.first_verdict), "second_verdict": int(p.second_verdict),
                 "reason": str(p.reason), "decided_at": int(p.decided_at),

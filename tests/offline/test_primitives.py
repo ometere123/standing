@@ -27,11 +27,11 @@ class FakeHash:
 def primitives():
     source = ast.parse(CONTRACT.read_text())
     names = {'error','bounded','canonical','public_host','checked_url','parse_model','evidence_shape',
-             'pair_shape','prompt_for','observe_once','verify_pair'}
+             'pair_shape','prompt_for','observe_once','verify_pair','keccak','is_hash'}
     defs = [node for node in source.body if isinstance(node, ast.FunctionDef) and node.name in names]
     tree = ast.fix_missing_locations(ast.Module(body=defs,type_ignores=[]))
     namespace = {'gl': FakeGL(), 'typing': types.SimpleNamespace(Any=object),
-                 'json': __import__('json'), 'MAX_URL':400, 'MAX_PAGE':14000,
+                 'json': __import__('json'), 'Keccak256': FakeHash, 'MAX_URL':400, 'MAX_PAGE':14000,
                  'MAX_QUOTE':600,'MAX_REASON':320,'MAX_TITLE':120,'MAX_SCOPE':1300,
                  'ERR':'EXPECTED', 'SOURCE_SUPPORTED':1, 'SOURCE_NOT_SUPPORTED':2,
                  'SOURCE_AMBIGUOUS':3,'SOURCE_UNAVAILABLE':4}
@@ -97,8 +97,9 @@ def test_prompt_marks_web_as_untrusted(primitives):
 def test_source_wont_assess_missing_anchors(primitives):
     primitives.gl.nondet=types.SimpleNamespace(web=types.SimpleNamespace(
         render=lambda *a,**k:'Matter MAT-123 describes delayed deliveries'))
+    source='Matter MAT-123 describes delayed deliveries'
     result=primitives.observe_once('https://test.example.com/matter','MAT-123','0x'+'1'*40,
-                                    'material impact','some context')
+                                    'material impact','some context',primitives.keccak(source))
     assert result['verdict']==2
 
 def test_forged_excerpt_is_downgraded(primitives):
@@ -108,7 +109,7 @@ def test_forged_excerpt_is_downgraded(primitives):
         web=types.SimpleNamespace(render=lambda *a,**k:source),
         exec_prompt=lambda *a,**k:{'verdict':'SUPPORTED','quote':'MAT-123 '+wallet+' altered fabricated context', 'reason':'x'})
     result=primitives.observe_once('https://test.example.com/matter','MAT-123',wallet,
-                                     'material impact','some context')
+                                     'material impact','some context',primitives.keccak(source))
     assert result['verdict']==3
 
 def test_supported_excerpt_must_bind_both_anchors(primitives):
@@ -118,8 +119,53 @@ def test_supported_excerpt_must_bind_both_anchors(primitives):
         web=types.SimpleNamespace(render=lambda *a,**k:source),
         exec_prompt=lambda *a,**k:{'verdict':'SUPPORTED','quote':source,'reason':'documented material interest'})
     result=primitives.observe_once('https://test.example.com/matter','MAT-123',wallet,
-                                     'material impact','some context')
+                                     'material impact','some context',primitives.keccak(source))
     assert result['verdict']==1
+
+
+def test_authenticated_hash_gate_precedes_model_assessment(primitives):
+    wallet='0x'+'1'*40
+    source=f'MAT-123 {wallet} is a paying customer affected by delayed service.'
+    calls={'llm':0}
+    primitives.gl.nondet=types.SimpleNamespace(
+        web=types.SimpleNamespace(render=lambda *a,**k:source),
+        exec_prompt=lambda *a,**k:calls.__setitem__('llm', calls['llm'] + 1))
+    result=primitives.observe_once('https://one.org/e','MAT-123',wallet,
+                                   'material stake','context','0'*64)
+    assert result['verdict']==2
+    assert calls['llm']==0
+
+
+def test_validator_rejects_redirect_substitution_after_leader(primitives):
+    wallet='0x'+'1'*40
+    source=f'MAT-123 {wallet} is a paying customer affected by delayed service.'
+    substituted=f'MAT-123 {wallet} is merely listed in an unrelated index.'
+    calls={'web':0}
+
+    class Return:
+        def __init__(self,calldata): self.calldata=calldata
+
+    class VM(FakeVM):
+        pass
+        def run_nondet_unsafe(self,leader,validator):
+            result=leader()
+            assert validator(Return(result)) is False
+            return result
+    VM.Return = Return
+
+    def render(*args, **kwargs):
+        calls['web'] += 1
+        return source if calls['web'] <= 2 else substituted
+
+    primitives.gl.vm=VM()
+    primitives.gl.nondet=types.SimpleNamespace(
+        web=types.SimpleNamespace(render=render),
+        exec_prompt=lambda *a,**k:{'verdict':'SUPPORTED','quote':source,'reason':'clear'})
+    digest=primitives.keccak(source)
+    pair=primitives.verify_pair('https://one.org/e','https://two.org/e','MAT-123',wallet,
+                                'material stake','context',digest,digest)
+    assert pair['a']['verdict']==pair['b']['verdict']==1
+    assert calls['web']==4
 
 def test_validator_rechecks_source_independently(primitives):
     wallet='0x'+'1'*40
@@ -137,7 +183,9 @@ def test_validator_rechecks_source_independently(primitives):
     primitives.gl.nondet=types.SimpleNamespace(
         web=types.SimpleNamespace(render=lambda *a,**k:source),
         exec_prompt=lambda *a,**k:{'verdict':'SUPPORTED','quote':source,'reason':'clear'})
-    pair=primitives.verify_pair('https://one.org/e','https://two.org/e','MAT-123',wallet,'material stake','context')
+    digest=primitives.keccak(source)
+    pair=primitives.verify_pair('https://one.org/e','https://two.org/e','MAT-123',wallet,
+                                'material stake','context',digest,digest)
     assert pair['a']['verdict']==pair['b']['verdict']==1
 
 
@@ -169,8 +217,9 @@ def test_validator_rejects_formatted_but_false_leader_result(primitives):
     primitives.gl.nondet=types.SimpleNamespace(
         web=types.SimpleNamespace(render=lambda *a,**k: material),
         exec_prompt=llm)
+    digest=primitives.keccak(material)
     pair=primitives.verify_pair('https://one.org/e','https://two.org/e','MAT-123',wallet,
-                                'material stake','context')
+                                'material stake','context',digest,digest)
     assert pair['a']['verdict']==pair['b']['verdict']==1
 
 
@@ -200,9 +249,34 @@ def test_validator_rejects_leader_quote_that_validator_did_not_choose(primitives
     primitives.gl.nondet=types.SimpleNamespace(
         web=types.SimpleNamespace(render=lambda *a,**k: source),
         exec_prompt=llm)
+    digest=primitives.keccak(source)
     pair=primitives.verify_pair('https://one.org/e','https://two.org/e','MAT-123',wallet,
-                                'material stake','context')
+                                'material stake','context',digest,digest)
     assert pair['a']['verdict']==pair['b']['verdict']==1
+
+
+def test_source_size_limit_is_fail_closed_before_semantics(primitives):
+    wallet='0x'+'1'*40
+    source=('MAT-123 '+wallet+' ' + ('x' * 14000))
+    calls={'llm':0}
+    primitives.gl.nondet=types.SimpleNamespace(
+        web=types.SimpleNamespace(render=lambda *a,**k:source),
+        exec_prompt=lambda *a,**k:calls.__setitem__('llm', calls['llm'] + 1))
+    result=primitives.observe_once('https://one.org/e','MAT-123',wallet,
+                                   'material stake','context',primitives.keccak(source))
+    assert result['verdict']==2
+    assert calls['llm']==0
+
+
+def test_contract_exposes_authenticated_authority_boundary():
+    source=CONTRACT.read_text()
+    assert 'class EvidenceCommitment' in source
+    assert 'def commit_evidence_hash' in source
+    assert 'only exact configured authority may commit evidence' in source
+    assert 'evidence commitment is immutable' in source
+    assert 'keccak(source) != expected_evidence_hash' in source
+    assert 'expected_hash_a, expected_hash_b' in source
+    assert 'authority_a' in source and 'authority_b' in source
 
 
 def test_consumer_binds_typed_caller_to_one_frozen_matter():
