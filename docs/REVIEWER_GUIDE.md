@@ -45,7 +45,11 @@ On Windows PowerShell, set `$env:GENVM_VERSION='v0.2.12'` before the Python/lint
 
 ## Deployment status
 
-The chain guard independently confirmed `studionet`, chain `61999`, RPC `https://studio.genlayer.com/api`, and local CLI `0.39.1`. Stable `gl.nondet.web.render` does not expose an effective redirect destination, so the contract authenticates exact rendered bytes against immutable authority commitments. The deployment script runs `scripts/verify_authenticated_evidence.py`, which executes the hash/redirect regressions and fails closed if they do not pass. Deployment addresses and live receipts remain unresolved until the actual finalized StudioNet transactions are captured.
+The chain guard independently confirmed `studionet`, chain `61999`, RPC `https://studio.genlayer.com/api`, and local CLI `0.39.1`. Stable `gl.nondet.web.render` does not expose an effective redirect destination, so the contract authenticates exact rendered bytes against immutable authority commitments. The deployment script runs `scripts/verify_authenticated_evidence.py`, which executes the hash/redirect regressions and fails closed if they do not pass.
+
+Standing is finalized at [`0x5b27dB099296AAF72f7F36f458cbdD79B9f64d4f`](https://explorer-studio.genlayer.com/address/0x5b27dB099296AAF72f7F36f458cbdD79B9f64d4f). The direct-party consumer is [`0xb894c8769f38Ee4685Edc26710edB3D0c12F7bB0`](https://explorer-studio.genlayer.com/address/0xb894c8769f38Ee4685Edc26710edB3D0c12F7bB0), and the public-interest consumer is [`0x28AbC74d187F8c8dA258e8d4f6267cFE4DFb60b2`](https://explorer-studio.genlayer.com/address/0x28AbC74d187F8c8dA258e8d4f6267cFE4DFb60b2). All three deployment receipts are finalized with execution success and source-matched hashes.
+
+The live record includes a registered-party success, wrong-wallet/replay/closure failures, a genuine validator disagreement, a fail-closed ambiguous quote, a successful authenticated public petition with two supported sources, a missing-commitment denial, and a successful typed public consumer challenge. The one-hour live expiry wait was not claimed; Direct Mode covers expiry.
 
 ## Source discipline
 

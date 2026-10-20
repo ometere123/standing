@@ -1,8 +1,8 @@
-# Standing — submission draft
+# Standing — submission handoff
 
 ## Status
 
-**PENDING FINAL DEPLOYMENT EVIDENCE — source-level and stable local security gates pass.**
+**READY FOR SUBMISSION, with explicit runtime limitations documented below.**
 
 ## Project title
 
@@ -10,37 +10,43 @@ Standing — consensus-backed procedural eligibility for challenge initiation
 
 ## Description (under 1,000 characters)
 
-Standing is a reusable GenLayer Intelligent Contract primitive for procedural challenge eligibility. A frozen charter defines the material-interest test and policy; a frozen matter commits its reference, controller, authorities, lifetime and registered actors. Known direct parties receive deterministic standing. An unregistered wallet may petition only for itself after two distinct authority principals immutably commit the exact evidence bytes for that wallet and matter. A leader and validators independently hash-authenticate and semantically assess both public sources, so redirects to changed content fail closed. Approved public eligibility is short-lived and cannot outlive the matter. ProtectedChallenge demonstrates typed consumer gating, caller binding and single-use replay protection. Standing does not decide dispute merits, guilt, damages or legal standing.
+Standing is a reusable GenLayer Intelligent Contract primitive for procedural challenge eligibility. A sealed charter freezes the material-interest test and petition policy; an activated matter freezes its reference, authorities, lifetime and registered actors. Known direct parties receive deterministic standing. An unregistered wallet may petition only for itself after two distinct authority principals immutably commit the exact evidence bytes for that wallet and matter. The leader and validators independently hash-authenticate and semantically assess both public sources, so changed redirected content fails closed. Approved public eligibility is short-lived and cannot outlive the matter. ProtectedChallenge demonstrates typed consumer gating, caller binding and single-use replay protection. Standing does not decide dispute merits, guilt, damages or legal standing.
 
 ## Repository
 
 https://github.com/ometere123/standing
 
-## Required deployment fields
+## Verified deployment
 
 - Network: `studionet`
 - Chain ID: `61999`
 - RPC: `https://studio.genlayer.com/api`
-- Repository-local CLI: `0.39.1`
-- Standing contract address: **UNRESOLVED — not deployed**
-- Official explorer link: **UNRESOLVED — no transaction**
-- ProtectedChallenge address: **UNRESOLVED — Standing not finalized**
+- Repository-local CLI: `genlayer@0.39.1`
+- Standing: [`0x5b27dB099296AAF72f7F36f458cbdD79B9f64d4f`](https://explorer-studio.genlayer.com/address/0x5b27dB099296AAF72f7F36f458cbdD79B9f64d4f)
+- Standing deployment: [`0x3ea2eab1c2f77421a75fad7ce16cc2ac96e29fe9e55096e672a6bb31dc439ce8`](https://explorer-studio.genlayer.com/tx/0x3ea2eab1c2f77421a75fad7ce16cc2ac96e672a6bb31dc439ce8)
+- ProtectedChallenge (direct): [`0xb894c8769f38Ee4685Edc26710edB3D0c12F7bB0`](https://explorer-studio.genlayer.com/address/0xb894c8769f38Ee4685Edc26710edB3D0c12F7bB0)
+- ProtectedChallenge (public): [`0x28AbC74d187F8c8dA258e8d4f6267cFE4DFb60b2`](https://explorer-studio.genlayer.com/address/0x28AbC74d187F8c8dA258e8d4f6267cFE4DFb60b2)
+- Both deployments finalized with execution success and pin the actual Standing address.
 
 ## Reusability
 
-Builders can deploy Standing, create sealed charters and matters, register deterministic actors, or integrate the typed `IStanding.is_eligible(matter_id, expected_matter_hash, claimant)` view from another Intelligent Contract. The bundled consumer pins one protected matter and records one-use challenge keys.
+Builders can deploy Standing, seal their own charter, activate matters with frozen hashes, register direct/dependent actors, or integrate the typed `IStanding.is_eligible(matter_id, expected_matter_hash, claimant)` view from another Intelligent Contract. Consumers must pin their intended matter and pass the actual caller address.
 
-## Verified locally
+## Verified engineering evidence
 
-- 43 offline checks passed.
-- 16 stable Direct Mode checks passed with `genlayer-test==0.29.0` and GenVM artifact `v0.2.12`; these use mocked web/LLM observations.
-- `genvm-linter==0.11.0` stable checks and schemas passed for both contracts.
-- RPC `eth_chainId` independently returned `0xf22f`, parsed as `61999`.
+- Offline: **43 passed**.
+- Stable Direct Mode: **16 passed** with `genlayer-test==0.29.0`, stable GenVM `v0.2.12`; web/LLM observations are mocks.
+- `genvm-linter==0.11.0`: both deployable contracts validated and schemas extracted successfully.
+- `eth_chainId` independently returned `0xf22f` (`61999`).
+- Live: registered-party challenge success; wrong-wallet, replay and closed-matter rollbacks; authenticated two-source public grant; typed public consumer success; missing-commitment denial; validator disagreement and ambiguous-quote fail-closed records.
 
-## Deployment proof
+## Security and limitations
 
-Pending. Stable `gl.nondet.web.render` does not expose an effective final host, so the submitted implementation authenticates exact rendered bytes with immutable authority commitments. The derived proof gate passes; final addresses, receipts and live lifecycle links must be added only after actual finalized StudioNet transactions.
+Stable v0.2.12 does not expose an enforceable final redirect-host check, and its HTTP path also follows redirects. Standing therefore authenticates exact rendered bytes with immutable sender-authenticated authority commitments before semantic assessment. This blocks changed redirected content from manufacturing a grant, but redirects remain an availability risk. Authority identity, key custody, institutional independence and real-world truth remain configured trust assumptions. A live one-hour expiry wait was not claimed; Direct Mode covers expiry and all deployed eligibility checks use actual chain timestamps.
 
-## Limitations
+## Source hashes
 
-Authority-principal identity, wallet-to-human identity and institutional independence of two hosts remain policy assumptions. A colluding pair of trusted authorities can precommit misleading content; redirects remain an availability risk even though changed bytes cannot authorize. Direct Mode is not live StudioNet consensus. See `docs/THREAT_MODEL.md` and `docs/DEPLOYMENT_EVIDENCE.md`.
+- `contracts/standing.py`: `A72F202727FCE84816160D12A2D8557A959933CB3DC3AB2F7DF8B51368D3F3EC`
+- `contracts/protected_challenge.py`: `780AFC3D8F4740E25BA8CB521395319EC37C25234789D80E3D2F23533570AF97`
+
+See `docs/DEPLOYMENT_EVIDENCE.md` for the complete receipt and lifecycle index.

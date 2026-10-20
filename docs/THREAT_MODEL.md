@@ -34,7 +34,7 @@ A source can lie, spoof a wallet in text, be compromised, redirect, disappear or
 - Re-petition overwrites the prior public claimant status so multiple stale receipts cannot be spliced together.
 - Consumer binds exact matter hash, resolves current standing by typed view, then prevents replay of the chosen 32-byte challenge key.
 
-## Known limitations to close in live QA
+## Known limitations
 
 1. **Redirects remain an availability risk**: stable v0.2.12 does not expose an effective final host, but changed redirected bytes fail the immutable content-hash check before semantic assessment. A redirect serving the exact committed bytes is safe against content substitution, not proof of current authority control. A redirect can still cause unavailable evidence and denial.
 2. **Authority trust**: the two principals are explicitly configured and transaction-authenticated, but the contract cannot prove their institutional identity, key custody, or independence. A colluding pair can precommit misleading documents; this is a declared trust assumption, not an LLM failure.
@@ -76,4 +76,4 @@ A source can lie, spoof a wallet in text, be compromised, redirect, disappear or
 - Stable Direct Mode: 16 passed with `genlayer-test==0.29.0` and the v0.2.12 artifact selector. Web/LLM responses are mocks and are not live consensus evidence.
 - Stable GenVM checks: `genvm-linter==0.11.0`, `GENVM_VERSION=v0.2.12`, both contracts pass lint/validation and schema extraction.
 - Network guard: repository-local CLI `0.39.1`; `eth_chainId` at `https://studio.genlayer.com/api` returned `0xf22f`, independently parsed as `61999`.
-- Deployment: the authenticated-evidence gate is now proven locally; no address, transaction, finalized execution or live lifecycle claim is valid until the deployment phase records them.
+- Deployment: Standing and both consumer instances are finalized on stable StudioNet and their deployed sources are matched to the recorded hashes. The one-hour expiry boundary remains covered by Direct Mode rather than a claimed live wait.

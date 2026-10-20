@@ -52,8 +52,9 @@ Matter owners set procedural scope up front; they **do not** get a blank check t
 - `tests/direct/` — GenLayer Direct Mode tests to run once `genlayer-test` is available.
 - `docs/THREAT_MODEL.md` — exact assumptions, known limitations, abuse tests.
 - `docs/REVIEWER_GUIDE.md` — scoring rationale, setup, multi-path live cases.
-- `docs/DEPLOYMENT_EVIDENCE.md` — immutable evidence template; does not fabricate receipts.
-- `SUBMISSION.md` — honest submission draft and current blocker status.
+- `docs/DEPLOYMENT_EVIDENCE.md` — source-matched finalized receipts and lifecycle links.
+- `docs/live_evidence_record.md` and `docs/live_evidence_record_compact.md` — public reproducibility fixtures used by the live authenticated-evidence proof.
+- `SUBMISSION.md` — submission-ready description and verified deployment fields.
 - `scripts/` — preflight and deployment scripts hardlocked to stable StudioNet.
 - `scripts/verify_authenticated_evidence.py` — derived fail-closed proof gate for the authority-commitment and redirect-substitution regressions.
 
@@ -94,7 +95,7 @@ The exact v0.2.12 source audit is recorded in `docs/THREAT_MODEL.md`: the runtim
 
 Expected stable RPC: `https://studio.genlayer.com/api`, not `https://studio-dev.genlayer.com/api`.
 
-Deploy `contracts/standing.py` first; wait for **finalized successful** status, then deploy `contracts/protected_challenge.py` with Standing's **final address** as constructor argument. The tool does not invent the address or submit a consumer deployment before the main address is confirmed. Record source SHA-256, transaction IDs and final explorer links in `docs/DEPLOYMENT_EVIDENCE.md`.
+The final stable StudioNet deployment is recorded in `docs/DEPLOYMENT_EVIDENCE.md`: Standing is `0x5b27dB099296AAF72f7F36f458cbdD79B9f64d4f`, with finalized source-matched deployment transaction [0x3ea2…](https://explorer-studio.genlayer.com/tx/0x3ea2eab1c2f77421a75fad7ce16cc2ac96e29fe9e55096e672a6bb31dc439ce8), and ProtectedChallenge consumers are `0xb894c8769f38Ee4685Edc26710edB3D0c12F7bB0` and `0x28AbC74d187F8c8dA258e8d4f6267cFE4DFb60b2`. Both consumer deployments pin the actual Standing address and a frozen matter hash.
 
 See `docs/CODEX_HANDOFF.md` for the final exact agent instructions.
 
@@ -114,8 +115,12 @@ assert standing.view().is_eligible(matter_id, stored_matter_hash, gl.message.sen
 
 The caller must freeze `expected_matter_hash` and *never* substitute a mutable caller-provided hash into security-sensitive contexts without checking it against its own intended matter. The bundled consumer demonstrates the typed call and one-time challenge-key replay protection, but an application must add its own challenge-handling logic and any fees/bonds.
 
+## Live proof
+
+The finalized live records include deterministic registered-party authorization, wrong-wallet and replay rollbacks, closed-matter rejection, an authenticated two-source public petition, and a typed public-claimant consumer challenge. The first public attempt also produced a genuine validator disagreement, while a later attempt correctly recorded an ambiguous quote; neither created standing. The successful public fixture is authenticated by immutable commitments from the two configured authority principals. The two hosts are distinct retrieval paths, not a claim of institutional independence. See the transaction-by-transaction record in `docs/DEPLOYMENT_EVIDENCE.md`.
+
 ## Non-goals
 
 No legal advice, lawsuit decisions, verdicts on underlying claims, confidential records, payment extraction, social-identity inference, blind trust of one LLM or only one webpage, frontend, API server, token issuance, or simulated StudioNet “proof”.
 
-MIT licence; use at your own risk. Submission remains blocked for value-bearing public standing until redirect safety and finalized deployment evidence are recorded.
+MIT licence; use at your own risk. Standing is a procedural eligibility primitive, not a merits adjudicator or legal decision-maker.
